@@ -17,7 +17,8 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_below="@id/nameTv"
-        android:text="bluetooth"/>
+        android:textOn="bluetooth"
+        android:textOff="bluetooth"/>
     <Button
         android:id="@+id/makeDiscoverableBtn"
         android:layout_width="wrap_content"
@@ -32,6 +33,27 @@
         android:layout_centerHorizontal="true"
         android:layout_below="@+id/makeDiscoverableBtn"
         android:text="start discovering"/>
+    <Button
+        android:id="@+id/waitBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/discoverBtn"
+        android:text="wait connection"/>
+    <EditText
+        android:id="@+id/connectToEt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/waitBtn"
+        android:hint="name to connect"/>
+    <Button
+        android:id="@+id/connectBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/connectToEt"
+        android:text="connect"/>
 
 </RelativeLayout>
 </layout>

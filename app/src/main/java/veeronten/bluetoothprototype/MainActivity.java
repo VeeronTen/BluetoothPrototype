@@ -1,10 +1,7 @@
 package veeronten.bluetoothprototype;
 
-import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothHeadset;
-import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -16,6 +13,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import veeronten.bluetoothprototype.databinding.ActivityMainBinding;
 
@@ -23,82 +22,46 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
     private BroadcastReceiver mReceiver;
-    private BluetoothA2dp audio;
     private BluetoothAdapter adapter;
-    BluetoothHeadset mBluetoothHeadset;
+    private ArrayList<BluetoothDevice> devices;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-
+        devices = new ArrayList<>();
         adapter = BluetoothAdapter.getDefaultAdapter();
         if(adapter==null){
             Toast.makeText(getApplicationContext(), "your phone does not support BT", Toast.LENGTH_SHORT).show();
         }
 
-        binding.nameTv.setText(adapter.getName()+"_"+adapter.getAddress());
+        binding.nameTv.setText(adapter.getName()+" ("+adapter.getAddress()+")");
 
-        binding.btIsEnabledTb.setChecked(adapter.isEnabled());
+        if(adapter.isEnabled()){
+            binding.btIsEnabledTb.setChecked(true);
+            unlockUI();
+        }else{
+            binding.btIsEnabledTb.setChecked(false);
+            lockUI();
+        }
+
         binding.btIsEnabledTb.setOnCheckedChangeListener((v, isChecked)-> {
             if(isChecked){
                 adapter.enable();
+                unlockUI();
             }else{
                 adapter.disable();
+                lockUI();
             }
         });
 
+
         binding.makeDiscoverableBtn.setOnClickListener((v)->makeDiscoverableMyself());
         binding.discoverBtn.setOnClickListener((v)->discover());
-
-
-
-
-
-// Get the default adapter
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        private BluetoothProfile.ServiceListener mProfileListener = new BluetoothProfile.ServiceListener() {
-            public void onServiceConnected(int profile, BluetoothProfile proxy) {
-                if (profile == BluetoothProfile.HEADSET) {
-                    mBluetoothHeadset = (BluetoothHeadset) proxy;
-                }
-            }
-            public void onServiceDisconnected(int profile) {
-                if (profile == BluetoothProfile.HEADSET) {
-                    mBluetoothHeadset = null;
-                }
-            }
-        };
-
-// Establish connection to the proxy.
-        mBluetoothAdapter.getProfileProxy(getApplicationContext(), mProfileListener, BluetoothProfile.HEADSET);
-
-        mBluetoothHeadset.
-// ... call functions on mBluetoothHeadset
-
-// Close proxy connection after use.
-        mBluetoothAdapter.closeProfileProxy(mBluetoothHeadset);
-
+        binding.connectBtn.setOnClickListener((v)->connect());
+        binding.waitBtn.setOnClickListener((v)->waitConnection());
     }
 
-    private void audio(){
-        BluetoothProfile.ServiceListener mProfileListener = new BluetoothProfile.ServiceListener() {
-            public void onServiceConnected(int profile, BluetoothProfile proxy) {
-                if (profile == BluetoothProfile.A2DP) {
-                    audio = (BluetoothA2dp) proxy;
-                }
-            }
-            public void onServiceDisconnected(int profile) {
-                if (profile == BluetoothProfile.A2DP) {
-                    audio = null;
-                }
-            }
-        };
-
-        adapter.getProfileProxy(getApplicationContext(), mProfileListener, BluetoothProfile.A2DP);
-
-        adapter.closeProfileProxy(BluetoothProfile.A2DP, audio);
-    }
     private void makeDiscoverableMyself(){
         Method method;
         try {
@@ -112,12 +75,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     private void discover(){
+        devices.clear();
+        if(mReceiver!=null){
+            stopDiscover();
+        }
         mReceiver = new BroadcastReceiver() {
             public void onReceive(Context context, Intent intent) {
                 if (BluetoothDevice.ACTION_FOUND.equals(intent.getAction())) {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    devices.add(device);
                     String deviceName = device.getName();
                     String deviceHardwareAddress = device.getAddress();
+                    Log.d("VT", deviceName+" ("+deviceHardwareAddress+")");
+
                     Toast.makeText(getApplicationContext(), deviceName+" "+deviceHardwareAddress, Toast.LENGTH_SHORT).show();
                 }
             }
@@ -126,11 +96,41 @@ public class MainActivity extends AppCompatActivity {
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         Log.d("VT", "Bluetooth searching was started");
         registerReceiver(mReceiver, filter);
+        adapter.startDiscovery();
+    }
+    private void stopDiscover(){
+        unregisterReceiver(mReceiver);
+        adapter.cancelDiscovery();
     }
 
+    private void connect(){
+        String nameToConnect = binding.connectToEt.getText().toString();
+        Log.d("VT", "nameToConnect: "+nameToConnect);
+        Iterator<BluetoothDevice> iter = devices.iterator();
+        BluetoothDevice d;
+        while(iter.hasNext()){
+            d = iter.next();
+            if(d.getName().equals(nameToConnect)){
+                new ConnectThread(d, adapter).start();
+            }
+        }
+    }
+
+    private void waitConnection(){
+        new AcceptThread(adapter).start();
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(mReceiver);
+        stopDiscover();
+    }
+
+    private void lockUI(){
+        binding.makeDiscoverableBtn.setEnabled(false);
+        binding.discoverBtn.setEnabled(false);
+    }
+    private void unlockUI(){
+        binding.makeDiscoverableBtn.setEnabled(true);
+        binding.discoverBtn.setEnabled(true);
     }
 }

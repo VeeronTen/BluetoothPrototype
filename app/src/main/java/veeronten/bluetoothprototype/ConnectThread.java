@@ -25,11 +25,12 @@ public class ConnectThread extends Thread {
         try {
             // Get a BluetoothSocket to connect with the given BluetoothDevice.
             // MY_UUID is the app's UUID string, also used in the server code.
-            tmp = device.createRfcommSocketToServiceRecord(UUID.fromString("DAT UUID"));
+            tmp = device.createInsecureRfcommSocketToServiceRecord(UUID.fromString("fdfc9e6d-de86-46c0-805b-e539acbf3693"));
         } catch (IOException e) {
-            Log.e(TAG, "Socket's create() method failed", e);
+            Log.d("VT", "Socket's create() method failed", e);
         }
         mmSocket = tmp;
+        Log.d("VT", "connect to "+mmDevice.getName()+"...");
     }
 
     public void run() {
@@ -40,8 +41,7 @@ public class ConnectThread extends Thread {
             // Connect to the remote device through the socket. This call blocks
             // until it succeeds or throws an exception.
             mmSocket.connect();
-            int i = mmSocket.getInputStream().read();
-            Log.d("VT", i+"");
+            mmSocket.getOutputStream().write(20);
         } catch (IOException connectException) {
             // Unable to connect; close the socket and return.
             try {
