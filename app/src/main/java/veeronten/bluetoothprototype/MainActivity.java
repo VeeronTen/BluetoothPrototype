@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
         if(adapter==null){
             Toast.makeText(getApplicationContext(), "your phone does not support BT", Toast.LENGTH_SHORT).show();
         }
+        Log.d("VT", "main");
 
         binding.nameTv.setText(adapter.getName()+" ("+adapter.getAddress()+")");
 
@@ -105,19 +106,21 @@ public class MainActivity extends AppCompatActivity {
 
     private void connect(){
         String nameToConnect = binding.connectToEt.getText().toString();
-        Log.d("VT", "nameToConnect: "+nameToConnect);
         Iterator<BluetoothDevice> iter = devices.iterator();
         BluetoothDevice d;
         while(iter.hasNext()){
             d = iter.next();
-            if(d.getName().equals(nameToConnect)){
-                new ConnectThread(d, adapter).start();
+            if(d.getName()!=null&&d.getName().equals(nameToConnect)){
+                Log.d("VT", "has device");
+                new WriterThread(d, adapter, getApplicationContext()).start();
+                break;
             }
         }
     }
 
     private void waitConnection(){
-        new AcceptThread(adapter).start();
+        new ServerWaiter(adapter).start();
+        //binding.waitBtn.setEnabled(false);
     }
     @Override
     protected void onDestroy() {
