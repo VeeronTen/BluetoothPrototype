@@ -6,32 +6,31 @@ import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.UUID;
 
 public class ServerWaiter extends Thread {
-    private BluetoothServerSocket server;
-    private BluetoothSocket newConnection;
-    private BluetoothAdapter adapter;
-    public ServerWaiter(BluetoothAdapter adapter) {
-        this.adapter = adapter;
+    private ServerSocket server;
+    private Socket newConnection;
+
+    public ServerWaiter() {
+        try {
+            server = new ServerSocket(8866);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void run() {
         Log.d("VT", "server is online");
         while (true) {
             try {
-                BluetoothServerSocket tmp = null;
-                try {
-                    tmp = adapter.listenUsingInsecureRfcommWithServiceRecord("NAME", UUID.fromString("fdfc9e6d-de86-46c0-805b-e539acbf3693"));
-                } catch (IOException e) {
-                    Log.d("VT", "Socket's listen() method failed", e);
-                }
-                server = tmp;
-                Log.d("VT", "waiting...");
+                Log.d("VT", "ServerWaiter: waiting...");
                 newConnection = server.accept();
-                Log.d("VT", "starting...");
+                Log.d("VT", "ServerWaiter: starting...");
                 new ServerReader(newConnection).start();
-                server.close();
+                //server.close();
             } catch (IOException e) {
                 Log.d("VT", "Socket's accept() method failed", e);
                 break;

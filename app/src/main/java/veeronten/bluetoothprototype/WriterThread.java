@@ -6,38 +6,30 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.Date;
 import java.util.UUID;
 
 import static android.content.ContentValues.TAG;
 
 public class WriterThread extends Thread {
-    private final BluetoothSocket mmSocket;
-    private final BluetoothDevice mmDevice;
-    private final BluetoothAdapter adapter;
+    private final Socket mmSocket = new Socket();
     private Context context;
+    private InetAddress address;
 
-    public WriterThread(BluetoothDevice device, BluetoothAdapter adapter, Context context) {
+    public WriterThread(Context context, InetAddress address) {
         this.context = context;
-        BluetoothSocket tmp = null;
-        mmDevice = device;
-        this.adapter = adapter;
-
-        try {
-            tmp = device.createInsecureRfcommSocketToServiceRecord(UUID.fromString("fdfc9e6d-de86-46c0-805b-e539acbf3693"));
-        } catch (IOException e) {
-            Log.d("VT", "Socket's create() method failed", e);
-        }
-        mmSocket = tmp;
-        Log.d("VT", "connect to "+mmDevice.getName()+"...");
+        this.address = address;
     }
 
     public void run() {
-        adapter.cancelDiscovery();
         int size=0;
 
         try {
@@ -45,8 +37,22 @@ public class WriterThread extends Thread {
             InputStream is = context.getAssets().open("2.3mbmin 1min");
 
             Log.d("VT", "connecting...");
-            mmSocket.connect();
+
+            try {
+                mmSocket.bind(null);
+            } catch (IOException e) {
+                Log.d("VT", "bind fuck...");
+                return;
+            }
+            try {
+                mmSocket.connect(new InetSocketAddress(address, 8866),5000);
+            } catch (IOException e) {
+                Log.d("VT", "connect fuck...", e);
+                return;
+            }
             Log.d("VT", "connected");
+
+
 
             Log.d("VT", "start sending");
             int i;

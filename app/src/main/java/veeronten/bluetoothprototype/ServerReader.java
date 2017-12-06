@@ -4,12 +4,13 @@ import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.Date;
 
 public class ServerReader extends Thread {
-    private BluetoothSocket connection;
+    private Socket connection;
 
-    ServerReader(BluetoothSocket connection){
+    ServerReader(Socket connection){
         this.connection = connection;
     }
 
@@ -18,10 +19,7 @@ public class ServerReader extends Thread {
         Log.d("VT", "runrun");
         int size=0;
         Date date=null;
-        if (connection == null){
-            Log.d("VT", "connection is null");
-            return;
-        }
+
         try {
             int i;
             byte[] buffer = new byte[1024];
@@ -37,7 +35,7 @@ public class ServerReader extends Thread {
         try {
             connection.close();
         } catch (IOException e) {
-            Log.d("VT", "xxxxxxxxxxxxxxxxx ");
+            Log.d("VT", "close fuckuped ");
         }
         Log.d("VT", "size (bytes)= "+size);
     }
