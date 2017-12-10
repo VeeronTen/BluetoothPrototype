@@ -6,12 +6,15 @@ import android.content.Context
 @SuppressLint("StaticFieldLeak")
 object AppContextHolder{
 
-    var context: Context? = null
-        private set
+    private var context: Context? = null
 
     fun init(context: Context){
         if(this.context==null){
             this.context = context
         }
+    }
+
+    fun getContext(): Context{
+        return context ?: throw NullPointerException("application context was not gotten by AppContextHolder.init()")
     }
 }

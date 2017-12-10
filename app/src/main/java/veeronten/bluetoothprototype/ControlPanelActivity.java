@@ -29,10 +29,6 @@ public class ControlPanelActivity extends AppCompatActivity implements WifiP2pMa
 
     private ActivityControlPanelBinding b;
 
-    private WifiP2pManager.Channel mChannel;
-    private WifiP2pManager mManager;
-    private MyReceiver mReceiver;
-
     private InetAddress mEmmiterAddress = null;
 
     private List<Pair<String, WifiP2pDevice>> mPeers;
@@ -44,10 +40,7 @@ public class ControlPanelActivity extends AppCompatActivity implements WifiP2pMa
 
         mPeers = new LinkedList<>();
 
-        mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-        mChannel = mManager.initialize(this, getMainLooper(), null);
-        createReceiver();
-
+        WifiReceiver.Registrar.register(this);
         b.createBtn.setOnClickListener((v)->{
             createService();
             b.ServiceNameEt.setEnabled(false);
@@ -63,20 +56,10 @@ public class ControlPanelActivity extends AppCompatActivity implements WifiP2pMa
         b.getBtn.setOnClickListener(v -> new WriterThread(getApplicationContext(), mEmmiterAddress).start());
     }
 
-    private void createReceiver(){
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-        intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
-        mReceiver = new MyReceiver(mManager, mChannel, this);
-        registerReceiver(mReceiver, intentFilter);
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(mReceiver);
+        WifiReceiver.Registrar.unregister();
     }
 
     private void createService(){
@@ -88,7 +71,7 @@ public class ControlPanelActivity extends AppCompatActivity implements WifiP2pMa
         WifiP2pDnsSdServiceInfo serviceInfo =
                 WifiP2pDnsSdServiceInfo.newInstance(name+"_radio", "_presence._tcp", record);
 
-        mManager.addLocalService(mChannel, serviceInfo, new WifiP2pManager.ActionListener() {
+        WiFiModule.INSTANCE.getManager().addLocalService(WiFiModule.INSTANCE.getChannel(), serviceInfo, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
                 Log.d("VT", "service was created ");
@@ -118,10 +101,10 @@ public class ControlPanelActivity extends AppCompatActivity implements WifiP2pMa
         };
         WifiP2pManager.DnsSdServiceResponseListener servListener = (String instanceName, String registrationType,
                 WifiP2pDevice resourceType) ->{};
-        mManager.setDnsSdResponseListeners(mChannel, servListener, txtListener);
+        WiFiModule.INSTANCE.getManager().setDnsSdResponseListeners(WiFiModule.INSTANCE.getChannel(), servListener, txtListener);
 
         WifiP2pDnsSdServiceRequest serviceRequest = WifiP2pDnsSdServiceRequest.newInstance();
-        mManager.addServiceRequest(mChannel,
+        WiFiModule.INSTANCE.getManager().addServiceRequest(WiFiModule.INSTANCE.getChannel(),
                 serviceRequest,
                 new WifiP2pManager.ActionListener() {
                     @Override
@@ -131,7 +114,7 @@ public class ControlPanelActivity extends AppCompatActivity implements WifiP2pMa
                         Log.e("VT", "cant add request service" + code);
                     }
                 });
-        mManager.discoverServices(mChannel, new WifiP2pManager.ActionListener() {
+        WiFiModule.INSTANCE.getManager().discoverServices(WiFiModule.INSTANCE.getChannel(), new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {}
             @Override
@@ -161,7 +144,7 @@ public class ControlPanelActivity extends AppCompatActivity implements WifiP2pMa
         config.deviceAddress = peerToListen.deviceAddress;
         config.wps.setup = WpsInfo.PBC;
 
-        mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+        WiFiModule.INSTANCE.getManager().connect(WiFiModule.INSTANCE.getChannel(), config, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {}
             @Override
